@@ -8,7 +8,14 @@ defmodule AdsbSpaceAlgebra do
   """
 
   def tickle(msg) do
-    AdsbSpaceAlgebraWeb.Endpoint.broadcast! "aircraft:updates", "aircraft:position", %{data: msg}
+    AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
+      "aircraft:updates",
+      "aircraft:position",
+      %{data: %{
+        lat: 41.123,
+        lon: -71.23
+      }}
+    )
   end
 
 end

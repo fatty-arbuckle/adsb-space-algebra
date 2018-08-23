@@ -1,3 +1,5 @@
+import drawBackgroundMap from "./map"
+
 // NOTE: The contents of this file will only be executed if
 // you uncomment its entry in "assets/js/app.js".
 
@@ -53,14 +55,31 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 
 socket.connect()
 
+var projection = null;
+
 // Now that you are connected, you can join channels with a topic:
 let channel = socket.channel("aircraft:updates", {})
 channel.join()
-  .receive("ok", resp => { console.log("Joined successfully", resp) })
-  .receive("error", resp => { console.log("Unable to join", resp) })
+  .receive("ok", resp => {
+    projection = drawBackgroundMap(),
+    console.log("Joined successfully", resp) })
+  .receive("error", resp => {
+    console.log("Unable to join", resp)
+  })
 
 channel.on("aircraft:position", ({data: data}) => {
   console.log("data: " + data)
+  // drawAircraft(data);
+
+  // drawAircraft(aircraft) {
+      d3.select("svg")
+        .append("circle")
+        .style("fill", "red")
+        .attr("r", 2)
+        .attr("cx",  function(d) {return projection(data.lat, data.lon)[0]})
+        .attr("cy", function(d) {return projection(data.lon, data.lat)[0]});
+  // }
+
 })
 
 export default socket
