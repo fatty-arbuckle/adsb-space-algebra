@@ -3,6 +3,7 @@ defmodule AdsbSpaceAlgebraWeb.UserSocket do
 
   ## Channels
   # channel "room:*", AdsbSpaceAlgebraWeb.RoomChannel
+  channel "aircraft:*", AdsbSpaceAlgebraWeb.AircraftChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
