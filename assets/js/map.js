@@ -1,43 +1,55 @@
 
-let drawBackgroundMap = function() {
-  var width = window.innerWidth * 0.8,
-      height = window.innerHeight * 0.8;
+let adsbMap = (function() {
 
+  var width = window.innerWidth * 0.8;
+  var height = window.innerHeight * 0.8;
   var svg = d3.select('#d3_map')
     .append('svg')
     .attr('width', width)
     .attr('height', height);
 
-  var projection = d3.geoAlbers()
-    // .scale(15000)
-    .scale(15000)
-    .rotate([71.51941, 0])
-    .center([0, 42.25397])
-    .translate([width/2, height/2]);
+  var projection = d3.geoMercator()
+    .scale(80)
+    .translate([width / 2, height / 2]);
+  // var projection = d3.geoAlbers()
+  //   // .scale(15000)
+  //   .scale(15000)
+  //   .rotate([71.51941, 0])
+  //   .center([0, 42.25397])
+  //   .translate([width/2, height/2]);
 
-    var geoPath = d3.geoPath().projection(projection);
+  return {
+    drawBackground: function() {
+      var geoPath = d3.geoPath().projection(projection);
+      d3.json("/js/newengland.geojson", function(data) {
+        svg.append('g').selectAll('path')
+          .data(data.features)
+          .enter()
+          .append('path')
+          .attr('fill', '#ccc')
+          .attr('stroke', '#333')
+          .attr('d', geoPath);
 
-    d3.json("/js/newengland.geojson", function(data) {
-      svg.append('g').selectAll('path')
-        .data(data.features)
-        .enter()
-        .append('path')
-        .attr('fill', '#ccc')
-        .attr('stroke', '#333')
-        .attr('d', geoPath);
+          d3.json("/js/office.geojson", function(data) {
+            svg.append('g').selectAll('path')
+              .data(data.features)
+              .enter()
+              .append('path')
+              .attr('fill', '#900')
+              .attr('stroke', '#999')
+              .attr('d', geoPath);
+          });
+      });
+    },
+    drawAircraft: function(aircraft) {
+      d3.select("svg")
+        .append("circle")
+        .style("fill", "red")
+        .attr("r", 2)
+        .attr("cx",  function(d) {return projection(aircraft.lat, aircraft.lon)[0]})
+        .attr("cy", function(d) {return projection(aircraft.lon, aircraft.lat)[0]});
+    }
+  }
+})();
 
-        d3.json("/js/office.geojson", function(data) {
-          svg.append('g').selectAll('path')
-            .data(data.features)
-            .enter()
-            .append('path')
-            .attr('fill', '#900')
-            .attr('stroke', '#999')
-            .attr('d', geoPath);
-        });
-    });
-
-    return geoPath;
-}
-
-export default drawBackgroundMap;
+export default adsbMap;

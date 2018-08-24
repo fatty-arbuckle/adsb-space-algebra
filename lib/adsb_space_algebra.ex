@@ -11,10 +11,7 @@ defmodule AdsbSpaceAlgebra do
     AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
       "aircraft:updates",
       "aircraft:position",
-      %{data: %{
-        lat: 41.123,
-        lon: -71.23
-      }}
+      %{lat: -41.7667, lon: -72.9, ship: "Endeavour"}
     )
   end
 

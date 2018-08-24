@@ -1,4 +1,4 @@
-import drawBackgroundMap from "./map"
+import adsbMap from "./map"
 
 // NOTE: The contents of this file will only be executed if
 // you uncomment its entry in "assets/js/app.js".
@@ -61,25 +61,15 @@ var projection = null;
 let channel = socket.channel("aircraft:updates", {})
 channel.join()
   .receive("ok", resp => {
-    projection = drawBackgroundMap(),
+    projection = adsbMap.drawBackground(),
     console.log("Joined successfully", resp) })
   .receive("error", resp => {
     console.log("Unable to join", resp)
   })
 
-channel.on("aircraft:position", ({data: data}) => {
-  console.log("data: " + data)
-  // drawAircraft(data);
-
-  // drawAircraft(aircraft) {
-      d3.select("svg")
-        .append("circle")
-        .style("fill", "red")
-        .attr("r", 2)
-        .attr("cx",  function(d) {return projection(data.lat, data.lon)[0]})
-        .attr("cy", function(d) {return projection(data.lon, data.lat)[0]});
-  // }
-
+channel.on("aircraft:position", data => {
+  console.log(data)
+  adsbMap.drawAircraft(data);
 })
 
 export default socket
