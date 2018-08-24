@@ -7,12 +7,26 @@ defmodule AdsbSpaceAlgebra do
   if it comes from the database, an external API or others.
   """
 
-  def tickle(msg) do
+  def tickle() do
     AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
       "aircraft:updates",
       "aircraft:position",
-      %{lat: -41.7667, lon: -72.9, ship: "Endeavour"}
+      %{features: [
+        %{type: "Feature",
+          properties: %{
+            id: 1
+          },
+          geometry: %{
+            type: "Point",
+            coordinates: [ -71 + randomFloat(), 42 + randomFloat() ]
+          }
+        }
+      ]}
     )
+  end
+
+  defp randomFloat() do
+    :rand.uniform() |> Float.round(3)
   end
 
 end
