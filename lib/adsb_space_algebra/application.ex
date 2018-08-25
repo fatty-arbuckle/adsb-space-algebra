@@ -10,7 +10,7 @@ defmodule AdsbSpaceAlgebra.Application do
     children = [
       # Start the endpoint when the application starts
       supervisor(AdsbSpaceAlgebraWeb.Endpoint, []),
-      {AdsbSpaceAlgebraWeb.Network.Client, [host: "127.0.0.1", port: 30003]}
+      {AdsbSpaceAlgebra.Network.Client, [host: "127.0.0.1", port: 30003]}
       # Start your own worker by calling: AdsbSpaceAlgebra.Worker.start_link(arg1, arg2, arg3)
       # worker(AdsbSpaceAlgebra.Worker, [arg1, arg2, arg3]),
     ]

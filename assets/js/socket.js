@@ -68,7 +68,7 @@ channel.join()
   })
 
 channel.on("aircraft:position", data => {
-  console.log(data)
+  console.log(data.features[0].properties.id + " reporting in")
   adsbMap.drawAircraft(data);
 })
 

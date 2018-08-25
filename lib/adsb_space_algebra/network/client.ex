@@ -1,4 +1,4 @@
-defmodule AdsbSpaceAlgebraWeb.Network.Client do
+defmodule AdsbSpaceAlgebra.Network.Client do
 
   use GenServer
 
@@ -50,20 +50,13 @@ defmodule AdsbSpaceAlgebraWeb.Network.Client do
     end
   end
 
-
-
-  def handle_info({:tcp, _socket, message}, state) do
-    handle_adsb(List.to_string(message))
-    {:noreply, state}
-  end
-
-  def handle_adsb("MSG,3,,," <> <<icoa::bytes-size(6)>> <> ",,,,,,," <> data) do
-    # IO.inspect(icoa)
-    # IO.inspect(data)
+  def handle_adsb("MSG,3," <> data) do
     tmp = String.split(data, ",")
-    # IO.inspect(Enum.at(tmp, 0)) # altitude
-    # IO.inspect(Enum.at(tmp, 3)) # lat
-    # IO.inspect(Enum.at(tmp, 4)) # lon
+    icoa = Enum.at(tmp,2)
+    altitude = Enum.at(tmp, 9)
+    lat = Enum.at(tmp, 12)
+    lon = Enum.at(tmp, 13)
+    Logger.debug("#{icoa} reporting at #{lat}, #{lon} alt #{altitude}")
     AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
       "aircraft:updates",
       "aircraft:position",
@@ -74,15 +67,20 @@ defmodule AdsbSpaceAlgebraWeb.Network.Client do
           },
           geometry: %{
             type: "Point",
-            coordinates: [ Enum.at(tmp,4), Enum.at(tmp, 3) ]
+            coordinates: [ lon, lat ]
           }
         }
       ]}
     )
   end
-  def handle_adsb(_) do
+  def handle_adsb(_ignored) do
   end
 
+
+  def handle_info({:tcp, _socket, message}, state) do
+    handle_adsb(List.to_string(message))
+    {:noreply, state}
+  end
 
   def handle_info(:timeout, state = %State{failure_count: failure_count}) do
     if failure_count <= @max_retries do

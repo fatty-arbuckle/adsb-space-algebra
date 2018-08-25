@@ -15,6 +15,8 @@ let adsbMap = (function() {
     .translate([width/2, height/2]);
   var geoPath = d3.geoPath().projection(projection);
 
+  var symbol = d3.symbol().size([100]);
+
   return {
     drawBackground: function() {
       d3.json("/js/newengland.geojson", function(data) {
@@ -31,8 +33,8 @@ let adsbMap = (function() {
               .data(data.features)
               .enter()
               .append('path')
-              .attr('fill', '#900')
-              .attr('stroke', '#999')
+              .attr('fill', '#333')
+              .attr('stroke', '#444')
               .attr('d', geoPath);
           });
       });
@@ -44,7 +46,12 @@ let adsbMap = (function() {
         .append('path')
         .attr('fill', '#900')
         .attr('stroke', '#999')
-        .attr('d', geoPath);
+        .attr('opacity', 1.0)
+        .attr('d', geoPath)
+        .transition()
+        .duration(5000)
+        .attr('opacity', .001);
+
       // d3.select("svg")
       //   .append("circle")
       //   .style("fill", "red")
