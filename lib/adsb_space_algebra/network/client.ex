@@ -60,17 +60,18 @@ defmodule AdsbSpaceAlgebra.Network.Client do
     AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
       "aircraft:updates",
       "aircraft:position",
-      %{features: [
-        %{type: "Feature",
-          properties: %{
-            id: icoa
-          },
-          geometry: %{
-            type: "Point",
-            coordinates: [ lon, lat ]
-          }
-        }
-      ]}
+      %{icoa: icoa, lon: lon, lat: lat, altitude: altitude}
+      # %{features: [
+      #   %{type: "Feature",
+      #     properties: %{
+      #       id: icoa
+      #     },
+      #     geometry: %{
+      #       type: "Point",
+      #       coordinates: [ lon, lat ]
+      #     }
+      #   }
+      # ]}
     )
   end
   def handle_adsb(_ignored) do
@@ -92,6 +93,7 @@ defmodule AdsbSpaceAlgebra.Network.Client do
         {:error, _reason} ->
           new_state = %{state | failure_count: failure_count + 1}
           new_state.on_disconnect.(new_state)
+          :timer.sleep(60 * 1000)
           {:noreply, new_state, @retry_interval}
       end
     else

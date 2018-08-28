@@ -15,7 +15,44 @@ let adsbMap = (function() {
     .translate([width/2, height/2]);
   var geoPath = d3.geoPath().projection(projection);
 
-  var symbol = d3.symbol().size([100]);
+  // how long an aircraft should be rendered
+  var aircraftTtlInMs = 2500;
+  // stores the aircraft to be plotted
+  var aircraftPlotData = []
+
+  var cleanupAircraft = setInterval(function () {
+    var now = (new Date).getTime();
+    aircraftPlotData = aircraftPlotData.filter(function (aircraft) {
+      return (now - aircraft.lastSeen) > aircraftTtlInMs;
+    })
+  }, 5000);
+
+  var altitudeScale = d3.scaleLinear()
+    .domain([0,40000])
+    .range([1,5]);
+
+  var drawAircraft = function() {
+    var selection = svg.selectAll("circle")
+      .data(aircraftPlotData)
+    selection.enter()
+      .append("circle")
+      .attr("cx", function (d) {
+        return projection([d.lon, d.lat])[0];
+      })
+      .attr("cy", function (d) {
+        return projection([d.lon, d.lat])[1];
+      })
+      .attr("r", function(d) {
+        return altitudeScale(d.altitude);
+      })
+      .attr('fill', '#900')
+      .attr('stroke', '#999')
+      .attr('opacity', 1.0)
+      .transition()
+      .duration(aircraftTtlInMs)
+      .attr('opacity', .001);
+      // selection.exit().remove();
+  }
 
   return {
     drawBackground: function() {
@@ -39,25 +76,10 @@ let adsbMap = (function() {
           });
       });
     },
-    drawAircraft: function(aircraft) {
-      svg.append('g').selectAll('path')
-        .data(aircraft.features)
-        .enter()
-        .append('path')
-        .attr('fill', '#900')
-        .attr('stroke', '#999')
-        .attr('opacity', 1.0)
-        .attr('d', geoPath)
-        .transition()
-        .duration(5000)
-        .attr('opacity', .001);
-
-      // d3.select("svg")
-      //   .append("circle")
-      //   .style("fill", "red")
-      //   .attr("r", 2)
-      //   .attr("cx",  function(d) {return projection(aircraft.lat, aircraft.lon)[0]})
-      //   .attr("cy", function(d) {return projection(aircraft.lon, aircraft.lat)[0]});
+    addAircraft: function(aircraft) {
+      aircraft.lastSeen = (new Date).getTime();;
+      aircraftPlotData.push(aircraft)
+      drawAircraft()
     }
   }
 })();
