@@ -1,5 +1,5 @@
 
-let adsbMap = (function() {
+let adsbMap = (function(node) {
 
   var width = window.innerWidth * 0.8;
   var height = window.innerHeight * 0.8;

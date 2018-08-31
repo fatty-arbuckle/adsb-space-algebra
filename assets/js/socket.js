@@ -1,4 +1,5 @@
 import adsbMap from "./map"
+import polarAdsbMap from "./polar_map"
 
 // NOTE: The contents of this file will only be executed if
 // you uncomment its entry in "assets/js/app.js".
@@ -55,13 +56,12 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 
 socket.connect()
 
-var projection = null;
-
 // Now that you are connected, you can join channels with a topic:
 let channel = socket.channel("aircraft:updates", {})
 channel.join()
   .receive("ok", resp => {
-    projection = adsbMap.drawBackground(),
+    adsbMap.drawBackground(),
+    polarAdsbMap.drawBackground("#polar_map"),
     console.log("Joined successfully", resp) })
   .receive("error", resp => {
     console.log("Unable to join", resp)
@@ -70,6 +70,7 @@ channel.join()
 channel.on("aircraft:position", data => {
   console.log(data.icoa + " reporting in")
   adsbMap.addAircraft(data);
+  polarAdsbMap.addAircraft(data);
 })
 
 export default socket

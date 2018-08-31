@@ -1,1 +1,8 @@
-<div id="d3_map"></div>
+<div class="row">
+ <!-- <div class="column">
+   <div id="d3_map"></div>
+ </div> -->
+ <div class="column">
+   <div id="polar_map"></div>
+ </div>
+</div>
