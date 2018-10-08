@@ -1,31 +1,139 @@
+import LatLon from "./latlon-spherical"
 
 let adsbMap = (function() {
 
   var width = window.innerWidth * 0.8;
   var height = window.innerHeight * 0.8;
-  var svg = d3.select('#d3_map')
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height);
-  var projection = d3.geoAlbers()
-    // .scale(15000)
-    .scale(15000)
-    .rotate([71.51941, 0])
-    .center([0, 42.25397])
-    .translate([width/2, height/2]);
-  var geoPath = d3.geoPath().projection(projection);
-
+  var center = { latitude: 42.25397, longitude: -71.51941 }
   // how long an aircraft should be rendered
   var aircraftTtlInMs = 2500;
   // stores the aircraft to be plotted
-  var aircraftPlotData = []
+  var aircraftPlotData = {}
+  var aircraftOverlays = []
+
+
+  var map = L.map('map').setView([center.latitude, center.longitude], 6);
+  var mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+  L.tileLayer(
+    'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      attribution: '&copy; ' + mapLink + ' Contributors',
+      maxZoom: 18,
+    }
+  ).addTo(map);
+
+  // /* Initialize the SVG layer */
+  // map._initPathRoot()
+
+  /* We simply pick up the SVG from the map object */
+  var svg = d3.select("#map").select("svg");
+  var g = svg.append("g");
+
+  var update = function() {
+      var aircraft = g.selectAll("aircraft").remove();
+
+      var aircraftEntries = d3.entries(aircraftPlotData);
+
+      console.log(aircraftEntries);
+
+      var aircraft = g.selectAll("aircraft")
+        .data(aircraftEntries)
+        .enter()
+          .append("path")
+            .attr('d', d3.symbol().type(d3.symbolTriangle).size(100))
+            .style("stroke", "black")
+            .style("opacity", .6)
+            .style("fill", "red");
+
+      // var aircraft_speed = g.selectAll("aircraft-speed")
+      //   .data(aircraftEntries)
+      //   .enter()
+      //     .append("rect")
+      //       .attr("height", function (d) { return d.speed; })
+      //       .attr("width", 1)
+      //       .style("stroke", "black")
+      //       .style("opacity", .6)
+      //       .style("fill", "black");
+      //
+      aircraft.attr("transform", function (d) { return translate(d) });
+      aircraft.transition()
+      .duration(aircraftTtlInMs)
+      .attr('opacity', .001);
+      //
+      // aircraft_speed.attr("transform", function (d) { return translate(d) });
+      // aircraft_speed.transition()
+      // .duration(aircraftTtlInMs)
+      // .attr('opacity', .001);
+      //
+      // g.attr("transform", d3.eventTransform);
+  }
+
+  var translate = function(d) {
+    var x = map.latLngToLayerPoint(d.value.LatLng).x;
+    var y = map.latLngToLayerPoint(d.value.LatLng).y;
+    // map.fitBounds(map.getBounds().extend(L.point(x,y)));
+    // console.log("processing " + d.id + ": " + map.getBounds())
+    return "translate("+x+","+y+")"+
+      "rotate(" + d.value.heading + ")";
+  }
 
   var cleanupAircraft = setInterval(function () {
     var now = (new Date).getTime();
-    aircraftPlotData = aircraftPlotData.filter(function (aircraft) {
-      return (now - aircraft.lastSeen) > aircraftTtlInMs;
-    })
-  }, 5000);
+    var filtered = Object.keys(aircraftPlotData).reduce(function (filtered, key) {
+        if ((now - aircraftPlotData[key].lastSeen) > aircraftTtlInMs) {
+          map.removeLayer(aircraftPlotData[key].circle);
+        } else {
+          filtered[key] = aircraftPlotData[key];
+        }
+        return filtered;
+    }, {});
+
+    aircraftPlotData = filtered;
+
+    // aircraftPlotData = aircraftPlotData.filter(function (aircraft) {
+    //   var tooOld = (now - aircraft.lastSeen) > aircraftTtlInMs;
+    //   if (tooOld) {
+    //     map.removeLayer(aircraft.overlay);
+    //   }
+    //   return !tooOld;
+    // })
+  }, 50000);
+
+  // map.on("viewreset", update);
+  // map.on("moveend", update);
+  // update();
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // var svg = d3.select('#d3_map')
+  //   .append('svg')
+  //   .attr('width', width)
+  //   .attr('height', height);
+  // var projection = d3.geoAlbers()
+  //   // .scale(15000)
+  //   .scale(15000)
+  //   .rotate([71.51941, 0])
+  //   .center([0, 42.25397])
+  //   .translate([width/2, height/2]);
+  // var geoPath = d3.geoPath().projection(projection);
+
+
+  // var cleanupAircraft = setInterval(function () {
+  //   var now = (new Date).getTime();
+  //   aircraftPlotData = aircraftPlotData.filter(function (aircraft) {
+  //     return (now - aircraft.lastSeen) > aircraftTtlInMs;
+  //   })
+  // }, 5000);
 
   var altitudeScale = d3.scaleLinear()
     .domain([0,40000])
@@ -54,32 +162,88 @@ let adsbMap = (function() {
       // selection.exit().remove();
   }
 
+  var calculateTail = function(center, heading, distance) {
+
+    var p1 = new LatLon(center.lat, center.lon);
+    var p2 = new LatLon(48.857, 2.351);
+    var b1 = p1.bearingTo(p2); // 156.2°
+    console.log(b1);
+
+  }
+
   return {
     drawBackground: function() {
-      d3.json("/js/newengland.geojson", function(data) {
-        svg.append('g').selectAll('path')
-          .data(data.features)
-          .enter()
-          .append('path')
-          .attr('fill', '#ccc')
-          .attr('stroke', '#333')
-          .attr('d', geoPath);
-
-          d3.json("/js/office.geojson", function(data) {
-            svg.append('g').selectAll('path')
-              .data(data.features)
-              .enter()
-              .append('path')
-              .attr('fill', '#333')
-              .attr('stroke', '#444')
-              .attr('d', geoPath);
-          });
-      });
     },
     addAircraft: function(aircraft) {
-      aircraft.lastSeen = (new Date).getTime();;
-      aircraftPlotData.push(aircraft)
-      drawAircraft()
+
+      if (aircraft.icoa in aircraftPlotData) {
+        console.log("updating " + aircraft.icoa);
+        aircraftPlotData[aircraft.icoa].circle
+          .setLatLng(new L.LatLng(aircraft.lat, aircraft.lon));
+
+        map.removeLayer(aircraftPlotData[aircraft.icoa].headingIndicator);
+
+        var center = new LatLon(aircraft.lat, aircraft.lon);
+        var tail = center.destinationPoint(100 * aircraft.speed, aircraft.heading);
+        aircraftPlotData[aircraft.icoa].headingIndicator = L.polyline([
+          new L.LatLng(aircraft.lat, aircraft.lon),
+          new L.LatLng(tail.lat, tail.lon)
+        ],{
+          stroke: true,
+          color: "red",
+          opacity: 0.8,
+        });
+        aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+
+        aircraftPlotData[aircraft.icoa].path.push(
+          new L.LatLng(aircraft.lat, aircraft.lon)
+        );
+        map.removeLayer(aircraftPlotData[aircraft.icoa].headingIndicator);
+        aircraftPlotData[aircraft.icoa].headingIndicator
+          = L.polyline(aircraftPlotData[aircraft.icoa].path,{
+            stroke: true,
+            color: "red",
+            opacity: 0.8,
+          });
+        aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+
+      } else {
+
+        var current = new LatLon(aircraft.lat, aircraft.lon);
+        var tail = current.destinationPoint(100 * aircraft.speed, aircraft.heading);
+
+        console.log("adding " + aircraft.icoa);
+        aircraftPlotData[aircraft.icoa] = {
+          "icoa":aircraft.icoa,
+          "lastSeen": (new Date).getTime(),
+          "heading":aircraft.heading,
+          "speed":aircraft.speed,
+          "path": [new L.LatLng(aircraft.lat, aircraft.lon)],
+          "latitude": aircraft.lat,
+          "longitude": aircraft.lon,
+          "circle": L.circle(new L.LatLng(aircraft.lat, aircraft.lon),
+            {
+              radius: 100,
+              stroke: true,
+              color: "red",
+              fill: true,
+              fillColor: "red",
+              opacity: 0.8,
+            }
+          ),
+          "headingIndicator": L.polyline([
+            new L.LatLng(aircraft.lat, aircraft.lon),
+            new L.LatLng(tail.lat, tail.lon)
+          ],{
+            stroke: true,
+            color: "red",
+            opacity: 0.8,
+          }),
+          "flightPath": null
+        };
+        aircraftPlotData[aircraft.icoa].circle.addTo(map);
+        aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+      }
     }
   }
 })();
