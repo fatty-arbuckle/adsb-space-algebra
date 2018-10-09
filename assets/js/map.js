@@ -4,23 +4,27 @@ let adsbMap = (function() {
 
   var width = window.innerWidth * 0.8;
   var height = window.innerHeight * 0.8;
-  var center = { latitude: 42.25397, longitude: -71.51941 }
+  var center = { latitude: 0.0, longitude: 0.0 }
   // how long an aircraft should be rendered
   var aircraftTtlInMs = 2500;
   // stores the aircraft to be plotted
   var aircraftPlotData = {}
   var aircraftOverlays = []
+  var discoveredBounds = new L.latLngBounds();
 
 
-  var map = L.map('map').setView([center.latitude, center.longitude], 6);
+  var map = L.map('map').setView([center.latitude, center.longitude], 1);
   var mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
   L.tileLayer(
     'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     {
       attribution: '&copy; ' + mapLink + ' Contributors',
-      maxZoom: 18,
+      maxZoom: 15,
     }
   ).addTo(map);
+
+  // var layer = new L.StamenTileLayer("toner");
+  // map.addLayer(layer);
 
   // /* Initialize the SVG layer */
   // map._initPathRoot()
@@ -82,22 +86,19 @@ let adsbMap = (function() {
     var filtered = Object.keys(aircraftPlotData).reduce(function (filtered, key) {
         if ((now - aircraftPlotData[key].lastSeen) > aircraftTtlInMs) {
           map.removeLayer(aircraftPlotData[key].circle);
+          map.removeLayer(aircraftPlotData[key].headingIndicator);
         } else {
           filtered[key] = aircraftPlotData[key];
         }
         return filtered;
     }, {});
 
-    aircraftPlotData = filtered;
+    if (filtered.length < aircraftPlotData.length) {
+      aircraftPlotData = filtered;
+      fitMap();
+    }
 
-    // aircraftPlotData = aircraftPlotData.filter(function (aircraft) {
-    //   var tooOld = (now - aircraft.lastSeen) > aircraftTtlInMs;
-    //   if (tooOld) {
-    //     map.removeLayer(aircraft.overlay);
-    //   }
-    //   return !tooOld;
-    // })
-  }, 50000);
+  }, 1000);
 
   // map.on("viewreset", update);
   // map.on("moveend", update);
@@ -169,6 +170,23 @@ let adsbMap = (function() {
     var b1 = p1.bearingTo(p2); // 156.2°
     console.log(b1);
 
+  }
+
+  var fitMap = function() {
+    d3.entries(aircraftPlotData).forEach(function (d) {
+      discoveredBounds.extend(new L.LatLng(d.value.latitude, d.value.longitude));
+      var current = new LatLon(d.value.latitude, d.value.longitude);
+      var tail = current.destinationPoint(100 * d.value.speed, d.value.heading);
+      discoveredBounds.extend(new L.LatLng(tail.lat, tail.lon));
+
+      d.value.path.forEach(function (p) {
+        discoveredBounds.extend(p);
+      });
+    });
+    if (discoveredBounds.isValid()) {
+      discoveredBounds.pad(10);
+      map.fitBounds(discoveredBounds, {});
+    }
   }
 
   return {
@@ -244,6 +262,8 @@ let adsbMap = (function() {
         aircraftPlotData[aircraft.icoa].circle.addTo(map);
         aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
       }
+
+      fitMap();
     }
   }
 })();

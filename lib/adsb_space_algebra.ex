@@ -7,12 +7,25 @@ defmodule AdsbSpaceAlgebra do
   if it comes from the database, an external API or others.
   """
 
-  def tickle(file_name, delay) do
+  @alphabet Enum.concat([?0..?9, ?A..?Z, ?a..?z])
 
+  def randstring(count) do
+    # Technically not needed, but just to illustrate we're
+    # relying on the PRNG for this in random/1
+    :rand.seed(:exsplus, :os.timestamp())
+    Stream.repeatedly(&random_char_from_alphabet/0)
+    |> Enum.take(count)
+    |> List.to_string()
+  end
+  defp random_char_from_alphabet() do
+    Enum.random(@alphabet)
+  end
+
+  def tickle(file_name, delay) do
     AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
       "aircraft:updates",
       "aircraft:position",
-      %{icoa: "abcde",
+      %{icoa: randstring(5),
         lon: (-71 - :rand.uniform()),
         lat: (41 + :rand.uniform()),
         altitude: :rand.uniform(30000),
@@ -20,10 +33,6 @@ defmodule AdsbSpaceAlgebra do
         speed: :rand.uniform(300)
       })
 
-    # # atitude: 42.25397, longitude: -71.51941
-    # #   var collection = [
-    # #     {"aircraft":{"id":1,"coordinates":[41.28,-74.77],"heading":0,"speed":80}},
-    #
     # File.stream!(file_name)
     #   |> Stream.map(fn(msg) ->
     #       AdsbSpaceAlgebra.Network.Client.handle_adsb msg
