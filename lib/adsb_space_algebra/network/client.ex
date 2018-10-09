@@ -60,19 +60,13 @@ defmodule AdsbSpaceAlgebra.Network.Client do
     AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
       "aircraft:updates",
       "aircraft:position",
-      %{icoa: icoa, lon: lon, lat: lat, altitude: altitude}
-      # %{features: [
-      #   %{type: "Feature",
-      #     properties: %{
-      #       id: icoa
-      #     },
-      #     geometry: %{
-      #       type: "Point",
-      #       coordinates: [ lon, lat ]
-      #     }
-      #   }
-      # ]}
-    )
+      %{icoa: icoa,
+        lon: lon,
+        lat: lat,
+        altitude: altitude,
+        heading: :rand.uniform(360),
+        speed: :rand.uniform(300)
+      })
   end
   def handle_adsb(_ignored) do
   end

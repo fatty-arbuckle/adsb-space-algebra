@@ -6,7 +6,7 @@ let adsbMap = (function() {
   var height = window.innerHeight * 0.8;
   var center = { latitude: 0.0, longitude: 0.0 }
   // how long an aircraft should be rendered
-  var aircraftTtlInMs = 2500;
+  var aircraftTtlInMs = 25000;
   // stores the aircraft to be plotted
   var aircraftPlotData = {}
   var aircraftOverlays = []
@@ -37,8 +37,6 @@ let adsbMap = (function() {
       var aircraft = g.selectAll("aircraft").remove();
 
       var aircraftEntries = d3.entries(aircraftPlotData);
-
-      console.log(aircraftEntries);
 
       var aircraft = g.selectAll("aircraft")
         .data(aircraftEntries)
@@ -163,14 +161,6 @@ let adsbMap = (function() {
       // selection.exit().remove();
   }
 
-  var calculateTail = function(center, heading, distance) {
-
-    var p1 = new LatLon(center.lat, center.lon);
-    var p2 = new LatLon(48.857, 2.351);
-    var b1 = p1.bearingTo(p2); // 156.2°
-    console.log(b1);
-
-  }
 
   var fitMap = function() {
     d3.entries(aircraftPlotData).forEach(function (d) {
@@ -184,7 +174,7 @@ let adsbMap = (function() {
       });
     });
     if (discoveredBounds.isValid()) {
-      discoveredBounds.pad(10);
+      discoveredBounds.pad(1);
       map.fitBounds(discoveredBounds, {});
     }
   }
@@ -194,74 +184,93 @@ let adsbMap = (function() {
     },
     addAircraft: function(aircraft) {
 
+      console.log(aircraft);
+
       if (aircraft.icoa in aircraftPlotData) {
-        console.log("updating " + aircraft.icoa);
-        aircraftPlotData[aircraft.icoa].circle
-          .setLatLng(new L.LatLng(aircraft.lat, aircraft.lon));
+        aircraftPlotData[aircraft.icoa].lastSeen = (new Date).getTime();
+        if ("heading" in aircraft) {
+          aircraftPlotData[aircraft.icoa].heading = aircraft.heading;
+        }
+        if ("speed" in aircraft) {
+          aircraftPlotData[aircraft.icoa].speed = aircraft.speed;
+        }
+        if ("lat" in aircraft && "lon" in aircraft && aircraft.lat != 0, aircraft.lon != 0) {
 
-        map.removeLayer(aircraftPlotData[aircraft.icoa].headingIndicator);
+          aircraftPlotData[aircraft.icoa].latitude = aircraft.lat;
+          aircraftPlotData[aircraft.icoa].longitude = aircraft.lon;
 
-        var center = new LatLon(aircraft.lat, aircraft.lon);
-        var tail = center.destinationPoint(100 * aircraft.speed, aircraft.heading);
-        aircraftPlotData[aircraft.icoa].headingIndicator = L.polyline([
-          new L.LatLng(aircraft.lat, aircraft.lon),
-          new L.LatLng(tail.lat, tail.lon)
-        ],{
-          stroke: true,
-          color: "red",
-          opacity: 0.8,
-        });
-        aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+          aircraftPlotData[aircraft.icoa].circle
+            .setLatLng(new L.LatLng(aircraft.lat, aircraft.lon));
 
-        aircraftPlotData[aircraft.icoa].path.push(
-          new L.LatLng(aircraft.lat, aircraft.lon)
-        );
-        map.removeLayer(aircraftPlotData[aircraft.icoa].headingIndicator);
-        aircraftPlotData[aircraft.icoa].headingIndicator
-          = L.polyline(aircraftPlotData[aircraft.icoa].path,{
-            stroke: true,
-            color: "red",
-            opacity: 0.8,
-          });
-        aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+          map.removeLayer(aircraftPlotData[aircraft.icoa].headingIndicator);
 
+          if (aircraft.speed && aircraft.heading) {
+            var center = new LatLon(aircraft.lat, aircraft.lon);
+            var tail = center.destinationPoint(100 * aircraft.speed, aircraft.heading);
+            aircraftPlotData[aircraft.icoa].headingIndicator = L.polyline([
+              new L.LatLng(aircraft.lat, aircraft.lon),
+              new L.LatLng(tail.lat, tail.lon)
+            ],{
+              stroke: true,
+              color: "red",
+              opacity: 0.8,
+            });
+            aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+          }
+
+          aircraftPlotData[aircraft.icoa].path.push(
+            new L.LatLng(aircraft.lat, aircraft.lon)
+          );
+          map.removeLayer(aircraftPlotData[aircraft.icoa].headingIndicator);
+          aircraftPlotData[aircraft.icoa].headingIndicator
+            = L.polyline(aircraftPlotData[aircraft.icoa].path,{
+              stroke: true,
+              color: "red",
+              opacity: 0.8,
+            });
+          aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+        }
       } else {
-
-        var current = new LatLon(aircraft.lat, aircraft.lon);
-        var tail = current.destinationPoint(100 * aircraft.speed, aircraft.heading);
-
-        console.log("adding " + aircraft.icoa);
         aircraftPlotData[aircraft.icoa] = {
           "icoa":aircraft.icoa,
           "lastSeen": (new Date).getTime(),
           "heading":aircraft.heading,
           "speed":aircraft.speed,
-          "path": [new L.LatLng(aircraft.lat, aircraft.lon)],
-          "latitude": aircraft.lat,
-          "longitude": aircraft.lon,
-          "circle": L.circle(new L.LatLng(aircraft.lat, aircraft.lon),
-            {
-              radius: 100,
+        }
+
+        if ("lat" in aircraft && "lon" in aircraft && aircraft.lat != 0, aircraft.lon != 0) {
+
+          var current = new LatLon(aircraft.lat, aircraft.lon);
+          var tail = current.destinationPoint(100 * aircraft.speed, aircraft.heading);
+
+          aircraftPlotData[aircraft.icoa].path = [new L.LatLng(aircraft.lat, aircraft.lon)];
+          aircraftPlotData[aircraft.icoa].latitude = aircraft.lat;
+          aircraftPlotData[aircraft.icoa].longitude = aircraft.lon;
+          aircraftPlotData[aircraft.icoa].circle = L.circle(new L.LatLng(aircraft.lat, aircraft.lon),
+              {
+                radius: 100,
+                stroke: true,
+                color: "red",
+                fill: true,
+                fillColor: "red",
+                opacity: 0.8,
+              }
+            );
+            aircraftPlotData[aircraft.icoa].headingIndicator  = L.polyline([
+              new L.LatLng(aircraft.lat, aircraft.lon),
+              new L.LatLng(tail.lat, tail.lon)
+            ],{
               stroke: true,
               color: "red",
-              fill: true,
-              fillColor: "red",
               opacity: 0.8,
-            }
-          ),
-          "headingIndicator": L.polyline([
-            new L.LatLng(aircraft.lat, aircraft.lon),
-            new L.LatLng(tail.lat, tail.lon)
-          ],{
-            stroke: true,
-            color: "red",
-            opacity: 0.8,
-          }),
-          "flightPath": null
-        };
-        aircraftPlotData[aircraft.icoa].circle.addTo(map);
-        aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+            });
+
+          aircraftPlotData[aircraft.icoa].circle.addTo(map);
+          aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
+        }
       }
+
+      console.log(aircraftPlotData[aircraft.icoa])
 
       fitMap();
     }
