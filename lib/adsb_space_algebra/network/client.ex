@@ -63,9 +63,21 @@ defmodule AdsbSpaceAlgebra.Network.Client do
       %{icoa: icoa,
         lon: lon,
         lat: lat,
-        altitude: altitude,
-        heading: :rand.uniform(360),
-        speed: :rand.uniform(300)
+        altitude: altitude
+      })
+  end
+  def handle_adsb("MSG,4," <> data) do
+    tmp = String.split(data, ",")
+    icoa = Enum.at(tmp,2)
+    speed = Enum.at(tmp, 10)
+    heading = Enum.at(tmp, 11)
+    Logger.debug("#{icoa} reporting speed #{speed}, heading #{heading}")
+    AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
+      "aircraft:updates",
+      "aircraft:position",
+      %{icoa: icoa,
+        speed: speed,
+        heading: heading
       })
   end
   def handle_adsb(_ignored) do

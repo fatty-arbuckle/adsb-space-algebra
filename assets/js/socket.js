@@ -68,7 +68,6 @@ channel.join()
   })
 
 channel.on("aircraft:position", data => {
-  console.log(data.icoa + " reporting in")
   adsbMap.addAircraft(data);
 })
 

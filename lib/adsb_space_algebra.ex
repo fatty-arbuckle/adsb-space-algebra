@@ -22,23 +22,23 @@ defmodule AdsbSpaceAlgebra do
   end
 
   def tickle(file_name, delay) do
-    AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
-      "aircraft:updates",
-      "aircraft:position",
-      %{icoa: randstring(5),
-        lon: (-71 - :rand.uniform()),
-        lat: (41 + :rand.uniform()),
-        altitude: :rand.uniform(30000),
-        heading: :rand.uniform(360),
-        speed: :rand.uniform(300)
-      })
+    # AdsbSpaceAlgebraWeb.Endpoint.broadcast!(
+    #   "aircraft:updates",
+    #   "aircraft:position",
+    #   %{icoa: randstring(5),
+    #     lon: (-71 - :rand.uniform()),
+    #     lat: (41 + :rand.uniform()),
+    #     altitude: :rand.uniform(30000),
+    #     heading: :rand.uniform(360),
+    #     speed: :rand.uniform(300)
+    #   })
 
-    # File.stream!(file_name)
-    #   |> Stream.map(fn(msg) ->
-    #       AdsbSpaceAlgebra.Network.Client.handle_adsb msg
-    #       :timer.sleep(delay)
-    #     end)
-    #   |> Stream.run
+    File.stream!(file_name)
+      |> Stream.map(fn(msg) ->
+          AdsbSpaceAlgebra.Network.Client.handle_adsb msg
+          :timer.sleep(delay)
+        end)
+      |> Stream.run
   end
 
 end

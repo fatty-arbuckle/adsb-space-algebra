@@ -7,3 +7,23 @@ html,body {
 .container {
   height: 90%;
 }
+
+
+.headingIndicator {
+  stroke: true;
+  color: "#56282D";
+  opacity: 0.8;
+}
+.aircraftMarker {
+  radius: 500;
+  stroke: true;
+  color: "#56282D";
+  fill: true;
+  fillColor: "#56282D";
+  opacity: 0.8;
+}
+.flightPath {
+  stroke: true;
+  color: "#BDC667";
+  opacity: 0.4;
+}
