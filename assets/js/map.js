@@ -29,6 +29,8 @@ let adsbMap = (function() {
   // /* Initialize the SVG layer */
   // map._initPathRoot()
 
+  var ulAircraftList = d3.select('#aircraft_list').append('ul');
+
   /* We simply pick up the SVG from the map object */
   var svg = d3.select("#map").select("svg");
   var g = svg.append("g");
@@ -101,6 +103,7 @@ let adsbMap = (function() {
     if (filtered.length < aircraftPlotData.length) {
       aircraftPlotData = filtered;
       fitMap();
+      updateAircraftList();
     }
 
   }, 1000);
@@ -178,7 +181,7 @@ let adsbMap = (function() {
   var updateAircraftPosition = function(icoa) {
     if (!(aircraftPlotData[icoa].hasOwnProperty("circle"))) {
       aircraftPlotData[icoa].circle
-        = L.circle(new L.LatLng(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude),{className: 'aircraftMarker'});
+        = L.circle(new L.LatLng(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude),{className: "aircraftMarker"});
     } else {
     aircraftPlotData[icoa].circle
       .setLatLng(new L.LatLng(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude));
@@ -196,11 +199,10 @@ let adsbMap = (function() {
       aircraftPlotData[icoa].headingIndicator = L.polyline([
         new L.LatLng(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude),
         new L.LatLng(tail.lat, tail.lon)
-      ],{className: 'headingIndicator'});
+      ],{className: "headingIndicator"});
     }
 
     if (!(aircraftPlotData[icoa].hasOwnProperty("path"))) {
-      console.log("New path for " + icoa);
       aircraftPlotData[icoa].path = [];
     }
     aircraftPlotData[icoa].path.push(
@@ -236,6 +238,20 @@ let adsbMap = (function() {
     }
   }
 
+  var updateAircraftList = function() {
+    var aircraftEntries = d3.entries(aircraftPlotData);
+
+	  var listItems = ulAircraftList.selectAll('li').data(aircraftEntries);
+    listItems.exit().remove();
+    listItems.enter()
+    .append('li')
+    .html(function (d) {
+      var now = (new Date).getTime();
+      var aliveTime = (now - d.value.lastSeen)
+      return "" + d.value.icoa + ": " + aliveTime;
+    });
+  }
+
   return {
     drawBackground: function() {
     },
@@ -252,13 +268,11 @@ let adsbMap = (function() {
       }
       if (aircraftPlotData[aircraft.icoa].hasOwnProperty("path")) {
         aircraftPlotData[aircraft.icoa].flightPath
-              = L.polyline(aircraftPlotData[aircraft.icoa].path,{className: 'flightPath'});
+              = L.polyline(aircraftPlotData[aircraft.icoa].path,{className: "flightPath"});
         aircraftPlotData[aircraft.icoa].flightPath.addTo(map);
       }
-      // TODO
-      // if (aircraftPlotData[aircraft.icoa].hasOwnProperty("path")) {
-      //   aircraftPlotData[aircraft.icoa].path.addTo(map);
-      // }
+
+      updateAircraftList()
 
       fitMap();
     }

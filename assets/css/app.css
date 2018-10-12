@@ -8,22 +8,29 @@ html,body {
   height: 90%;
 }
 
+.row {
+    display: flex;
+}
+
+.column {
+    flex: 50%;
+}
 
 .headingIndicator {
-  stroke: true;
-  color: "#56282D";
-  opacity: 0.8;
+  stroke: true !important;
+  color: "#56282D" !important;
+  opacity: 0.8 !important;
 }
 .aircraftMarker {
-  radius: 500;
-  stroke: true;
-  color: "#56282D";
-  fill: true;
-  fillColor: "#56282D";
-  opacity: 0.8;
+  radius: 500 !important;
+  stroke: true !important;
+  color: "#56282D" !important;
+  fill: true !important;
+  fillColor: "#56282D" !important;
+  opacity: 0.8 !important;
 }
 .flightPath {
-  stroke: true;
-  color: "#BDC667";
-  opacity: 0.4;
+  stroke: true !important;
+  color: "#BDC667" !important;
+  opacity: 0.4 !important;
 }
