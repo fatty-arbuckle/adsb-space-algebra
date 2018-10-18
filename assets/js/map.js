@@ -75,8 +75,6 @@ let adsbMap = (function() {
   var translate = function(d) {
     var x = map.latLngToLayerPoint(d.value.LatLng).x;
     var y = map.latLngToLayerPoint(d.value.LatLng).y;
-    // map.fitBounds(map.getBounds().extend(L.point(x,y)));
-    // console.log("processing " + d.id + ": " + map.getBounds())
     return "translate("+x+","+y+")"+
       "rotate(" + d.value.heading + ")";
   }
@@ -153,15 +151,20 @@ let adsbMap = (function() {
       // selection.exit().remove();
   }
 
+// takes a LatLon and returns a L.LatLng
+  var buildTail = function(lat, lon, speed, heading) {
+    var current = new LatLon(lat, lon);
+    var tail = current.destinationPoint(-10 * speed, heading);
+    return new L.LatLng(tail.lat, tail.lon);
+  }
 
   var fitMap = function() {
     d3.entries(aircraftPlotData).forEach(function (d) {
       if (d.value.hasOwnProperty("latitude") && d.value.hasOwnProperty("latitude")) {
         discoveredBounds.extend(new L.LatLng(d.value.latitude, d.value.longitude));
         if (d.value.hasOwnProperty("speed") && d.value.hasOwnProperty("heading")) {
-          var current = new LatLon(d.value.latitude, d.value.longitude);
-          var tail = current.destinationPoint(100 * d.value.speed, d.value.heading);
-          discoveredBounds.extend(new L.LatLng(tail.lat, tail.lon));
+          var tail = buildTail(d.value.latitude, d.value.longitude, d.value.speed, d.value.heading);
+          discoveredBounds.extend(tail);
         }
 
         if (d.value.hasOwnProperty("path")) {
@@ -173,10 +176,11 @@ let adsbMap = (function() {
 
     });
     if (discoveredBounds.isValid()) {
-      discoveredBounds.pad(1);
+      // discoveredBounds.pad(.1);
       map.fitBounds(discoveredBounds, {});
     }
   }
+
 
   var updateAircraftPosition = function(icoa) {
     if (!(aircraftPlotData[icoa].hasOwnProperty("circle"))) {
@@ -194,11 +198,9 @@ let adsbMap = (function() {
     if (aircraftPlotData[icoa].hasOwnProperty("speed") && aircraftPlotData[icoa].hasOwnProperty("heading")) {
       var speed = aircraftPlotData[icoa].speed;
       var heading = aircraftPlotData[icoa].heading;
-      var center = new LatLon(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude);
-      var tail = center.destinationPoint(-10 * speed, heading);
+      var tail = buildTail(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude, speed, heading);
       aircraftPlotData[icoa].headingIndicator = L.polyline([
-        new L.LatLng(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude),
-        new L.LatLng(tail.lat, tail.lon)
+        new L.LatLng(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude), tail
       ],{className: "headingIndicator"});
     }
 
@@ -208,9 +210,6 @@ let adsbMap = (function() {
     aircraftPlotData[icoa].path.push(
       new L.LatLng(aircraftPlotData[icoa].latitude, aircraftPlotData[icoa].longitude)
     );
-    console.log("path for " + icoa + " is " + aircraftPlotData[icoa].path.length + " long");
-
-
   }
 
   var updateAircraftData = function(aircraft) {
@@ -256,9 +255,6 @@ let adsbMap = (function() {
     drawBackground: function() {
     },
     addAircraft: function(aircraft) {
-
-      console.log(aircraft);
-
       updateAircraftData(aircraft);
       if (aircraftPlotData[aircraft.icoa].hasOwnProperty("headingIndicator")) {
         aircraftPlotData[aircraft.icoa].headingIndicator.addTo(map);
